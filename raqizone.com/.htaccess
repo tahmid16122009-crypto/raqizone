@@ -1,1 +1,43 @@
-n
+RewriteEngine On
+RewriteBase /
+
+# Static files direct করো
+RewriteRule ^static/ - [L]
+RewriteRule ^uploads/ - [L]
+
+# Admin routes
+RewriteRule ^admin/?$ admin/index.php [L]
+RewriteRule ^admin/products/?$ admin/products.php [L]
+RewriteRule ^admin/products/add/?$ admin/product_form.php [L]
+RewriteRule ^admin/products/([^/]+)/edit/?$ admin/product_form.php?id=$1 [L]
+RewriteRule ^admin/orders/?$ admin/orders.php [L]
+RewriteRule ^admin/orders/([^/]+)/?$ admin/order_detail.php?id=$1 [L]
+RewriteRule ^admin/edit-ui/?$ admin/edit_ui.php [L]
+RewriteRule ^admin/login/?$ admin/login.php [L]
+RewriteRule ^admin/logout/?$ admin/logout.php [L]
+
+# User routes
+RewriteRule ^home/?$ pages/home.php [L]
+RewriteRule ^product/([^/]+)/?$ pages/product.php?id=$1 [L]
+RewriteRule ^cart/?$ pages/cart.php [L]
+RewriteRule ^orders/?$ pages/orders.php [L]
+RewriteRule ^orders/([^/]+)/?$ pages/order_detail.php?id=$1 [L]
+RewriteRule ^me/?$ pages/me.php [L]
+RewriteRule ^logout/?$ pages/logout.php [L]
+
+# API routes
+RewriteRule ^api/cart/add/?$ api/cart.php?action=add [L]
+RewriteRule ^api/cart/remove/([^/]+)/?$ api/cart.php?action=remove&id=$1 [L]
+RewriteRule ^api/cart/update/([^/]+)/?$ api/cart.php?action=update&id=$1 [L]
+RewriteRule ^api/place-order/?$ api/order.php?action=place [L]
+RewriteRule ^api/orders/([^/]+)/cancel/?$ api/order.php?action=cancel&id=$1 [L]
+RewriteRule ^api/orders/([^/]+)/status/?$ api/order.php?action=status&id=$1 [L]
+RewriteRule ^api/upload-design/?$ api/upload.php [L]
+
+# Auth
+RewriteRule ^auth/login/?$ pages/auth.php [L]
+
+# Root
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^$ index.php [L]
