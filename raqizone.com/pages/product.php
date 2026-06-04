@@ -370,4 +370,62 @@ function buildDeliverySum(){
   let s=0;Object.values(sel).forEach(i=>s+=i.price*i.qty);
   document.getElementById('s2sum').innerHTML=`<div class="s2i">${Object.values(sel).map(it=>{
     const cd=cdData[it.id]||{};
-    const cdHtml=PD.hasCustomDesign&&cd?`${cd.text?'<span style="font-size:.72rem;color:var(--gray)">📝 '+cd.text+'</span>':''}${cd.img1?'<img src="'+cd.img1+'" style="width:32px;height:32px;object-fit:cover;border-radius:4px;margin-top
+    const cdHtml=PD.hasCustomDesign&&cd?`${cd.text?'<span style="font-size:.72rem;color:var(--gray)">📝 '+cd.text+'</span>':''}${cd.img1?'<img src="'+cd.img1+'" style="width:32px;height:32px;object-fit:cover;border-radius:4px;margin-top:3px">':''}${cd.img2?'<img src="'+cd.img2+'" style="width:32px;height:32px;object-fit:cover;border-radius:4px;margin-top:3px;margin-left:4px">':'`}`:'';
+    return `<div class="s2it"><img src="${it.path}" alt=""><div class="s2ii"><span>পরিমাণ: ${it.qty}</span>${Object.entries(it.opts).map(([k,v])=>'<span>'+k+': '+v+'</span>').join('')}<span class="s2p">৳${(it.price*it.qty).toFixed(0)}</span>${cdHtml}</div></div>`;
+  }).join('')}</div><div class="s2t"><span>পণ্যের মূল্য: ৳${s.toFixed(0)}</span><span>ডেলিভারি: ৳${PD.del.toFixed(0)}</span><strong>মোট: ৳${(s+PD.del).toFixed(0)}</strong></div>`;
+  calcTotal();
+}
+
+// Payment method selection
+function selPM(method,btn){
+  document.querySelectorAll('.pmb').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');
+  ['bkashBox','nagadBox','codBox'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  let s=0;Object.values(sel).forEach(i=>s+=i.price*i.qty);
+  const amt=(PD.payOpt==='delivery_only'?PD.del:s+PD.del);const amtStr='৳'+amt.toFixed(0);
+  if(method==='bkash'){const box=document.getElementById('bkashBox');if(box){box.style.display='block';const t=document.getElementById('bkashAmtTxt');if(t)t.textContent=amtStr;const inp=document.getElementById('bkashLast4');if(inp)inp.value='';}}
+  else if(method==='nagad'){const box=document.getElementById('nagadBox');if(box){box.style.display='block';const t=document.getElementById('nagadAmtTxt');if(t)t.textContent=amtStr;const inp=document.getElementById('nagadLast4');if(inp)inp.value='';}}
+  else if(method==='cod'){const box=document.getElementById('codBox');if(box)box.style.display='block';}
+}
+
+// Place order
+async function po(method,last4Id,btn){
+  const n=document.getElementById('oN').value.trim(),m=document.getElementById('oM').value.trim(),
+    di=document.getElementById('oDi').value.trim(),up=document.getElementById('oUp').value.trim(),
+    un=document.getElementById('oUn').value.trim(),vi=document.getElementById('oVi').value.trim();
+  if(!n||!m||!di||!up||!un||!vi){alert('সব প্রয়োজনীয় তথ্য পূরণ করুন।');return;}
+  let last4='';
+  if(last4Id){last4=document.getElementById(last4Id)?.value?.trim()||'';if(last4.length!==4||!/^\d{4}$/.test(last4)){alert('পাঠানো নম্বরের শেষ ৪টি সংখ্যা সঠিকভাবে দিন।');return;}}
+  let s=0;
+  const items=Object.values(sel).map(it=>{s+=it.price*it.qty;const cd=cdData[it.id]||{};return{product_id:PD.id,product_image_id:it.id,product_name:PD.name,image_path:it.path,quantity:it.qty,price:it.price,selected_options:it.opts,custom_design_text:cd.text||'',custom_design_image1:cd.img1||'',custom_design_image2:cd.img2||''};});
+  const origText=btn.textContent;btn.disabled=true;btn.textContent='অর্ডার হচ্ছে...';
+  try{
+    const r=await fetch('/api/order.php?action=place',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items,name:n,mobile:m,district:di,upazila:up,union_name:un,village:vi,road_name:document.getElementById('oRo').value.trim(),holding_number:document.getElementById('oHo').value.trim(),delivery_charge:PD.del,total_amount:s+PD.del,payment_method:method,sender_last4:last4,payment_status:method==='cod'?'cod':'pending_verification'})});
+    const d=await r.json();
+    if(d.error==='not_logged_in'||d.error==='session_expired'){cp();st('tSess');setTimeout(()=>window.location.href='/logout',2500);return;}
+    if(d.ok){cp();st('t1');setTimeout(()=>window.location.href='/orders',2000);}
+    else alert('সমস্যা: '+(d.error||''));
+  }catch(e){alert('নেটওয়ার্ক সমস্যা।');}
+  finally{btn.disabled=false;btn.textContent=origText;}
+}
+
+// Quick cart
+async function qc(){
+  if(!PD.imgs.length){alert('কোনো ছবি নেই');return;}
+  const img=PD.imgs[cur]||PD.imgs[0];
+  const fd=new FormData();
+  fd.append('product_id',PD.id);fd.append('product_image_id',img.id);fd.append('product_name',PD.name);fd.append('image_path',img.path);fd.append('quantity','1');fd.append('price',img.price.toString());
+  try{
+    const r=await fetch('/api/cart.php?action=add',{method:'POST',body:fd});
+    const d=await r.json();
+    if(d.error==='not_logged_in'){window.location.href='/';return;}
+    if(d.error==='session_expired'){st('tSess');setTimeout(()=>window.location.href='/logout',2500);return;}
+    if(d.ok)st('t2');else alert('কার্ট সমস্যা: '+(d.error||''));
+  }catch(e){alert('সমস্যা হয়েছে।');}
+}
+
+function ov(url){let u=url;if(u.includes('youtube.com/watch?v='))u=u.replace('watch?v=','embed/');else if(u.includes('youtu.be/')){const id=u.split('youtu.be/')[1].split('?')[0];u='https://www.youtube.com/embed/'+id;}document.getElementById('vf').src=u;document.getElementById('vov').classList.add('show');document.body.style.overflow='hidden';}
+function cv(){document.getElementById('vf').src='';document.getElementById('vov').classList.remove('show');document.body.style.overflow='';}
+function st(id){const el=document.getElementById(id);el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2500);}
+</script>
+
+<?php render_nav('home'); render_foot(); ?>
