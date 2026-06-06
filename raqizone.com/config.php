@@ -1,13 +1,13 @@
 <?php
 // ── Database Config
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'cpanel_username_raqizone_db');
-define('DB_USER', 'raqizone_tahmid');
+define('DB_NAME', 'raqizone_raqizone_db');
+define('DB_USER', 'raqizone_raqizone_user');
 define('DB_PASS', 'tahmid2009');
 
 // ── App Config
 define('SECRET_KEY', 'RaqiZone_2026_X7kP9mQ2L8vN5');
-define('ADMIN_PASSWORD', 'tahmid2009');
+define('ADMIN_PASSWORD', 'tahmid1612');
 define('SITE_URL', 'https://raqizone.com');
 define('UPLOAD_DIR', __DIR__ . '/uploads/');
 define('UPLOAD_URL', SITE_URL . '/uploads/');
@@ -32,6 +32,7 @@ $uploadDirs = [
     UPLOAD_DIR . 'designs/',
     UPLOAD_DIR . 'backgrounds/',
 ];
+
 foreach ($uploadDirs as $dir) {
     if (!is_dir($dir)) {
         mkdir($dir, 0755, true);
